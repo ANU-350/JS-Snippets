@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.Externalizable;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
+import java.io.ObjectStreamField;
 import java.io.OptionalDataException;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
@@ -39,8 +40,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.security.PrivilegedAction;
 import java.util.Properties;
+
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
@@ -430,6 +433,69 @@ public class ReflectionFactory {
         }
     }
 
+    public final MethodHandle defaultReadObjectForSerialization(Class<?> cl) {
+        if (! isValidSerializable(cl)) {
+            return null;
+        }
+
+        return SerializationBytecodeGenerator.defaultReadObjectForSerialization(cl);
+    }
+
+    public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
+        if (! isValidSerializable(cl)) {
+            return null;
+        }
+
+        return SerializationBytecodeGenerator.defaultWriteObjectForSerialization(cl);
+    }
+
+    public final ObjectStreamField[] serialPersistentFieldsOf(Class<?> cl) {
+        if (! isValidSerializable(cl)) {
+            return null;
+        }
+
+        try {
+            Field field = cl.getDeclaredField("serialPersistentFields");
+            int mods = field.getModifiers();
+            if (! (Modifier.isStatic(mods) && Modifier.isPrivate(mods) && Modifier.isFinal(mods))) {
+                return null;
+            }
+            field.setAccessible(true);
+            return (ObjectStreamField[]) field.get(null);
+        } catch (ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
+    public final long serialVersionUIDOf(Class<?> cl) {
+        if (! isValidSerializable(cl)) {
+            return 0;
+        }
+
+        try {
+            Field field = cl.getDeclaredField("serialVersionUID");
+            int mods = field.getModifiers();
+            if (! (Modifier.isStatic(mods) && Modifier.isPrivate(mods) && Modifier.isFinal(mods))) {
+                return 0;
+            }
+            field.setAccessible(true);
+            return field.getLong(null);
+        } catch (ReflectiveOperationException e) {
+            return 0;
+        }
+    }
+
+    private static boolean isValidSerializable(Class<?> cl) {
+        return Serializable.class.isAssignableFrom(cl)
+            && ! cl.isInterface()
+            && ! cl.isArray()
+            && ! Proxy.isProxyClass(cl)
+            && ! Externalizable.class.isAssignableFrom(cl)
+            && ! cl.isEnum()
+            && ! cl.isRecord()
+            && ! cl.isHidden();
+    }
+
     /**
      * Returns a MethodHandle for {@code writeReplace} on the serializable class
      * or null if no match found.
@@ -632,5 +698,4 @@ public class ReflectionFactory {
         return cl1.getClassLoader() == cl2.getClassLoader() &&
                 cl1.getPackageName() == cl2.getPackageName();
     }
-
 }
