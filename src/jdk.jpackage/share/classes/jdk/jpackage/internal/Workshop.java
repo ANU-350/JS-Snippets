@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,51 @@
  */
 package jdk.jpackage.internal;
 
-class LauncherAsService {
+import java.nio.file.Path;
 
-    LauncherAsService(Launcher launcher, OverridableResource resource) {
-        this.name = launcher.name();
-        this.description = launcher.description();
-        this.resource = resource;
-        resource.addSubstitutionDataEntry("SERVICE_DESCRIPTION", description);
+interface Workshop {
+
+    Path buildRoot();
+
+    Path resourceDir();
+
+    /**
+     * Returns path to application image directory. When building app image this is the path to a
+     * directory where it is assembled. When building a package this is the path to the source app
+     * image.
+     */
+    default Path appImageDir() {
+        return buildRoot().resolve("image");
     }
 
-    protected OverridableResource getResource() {
-        return resource;
+    default Path configDir() {
+        return buildRoot().resolve("config");
     }
 
-    protected String getName() {
-        return name;
+    default OverridableResource createResource(String defaultName) {
+        return new OverridableResource(defaultName).setResourceDir(resourceDir());
     }
 
-    protected String getDescription() {
-        return description;
+    record Impl(Path buildRoot, Path resourceDir) implements Workshop {
+
     }
 
-    private final String name;
-    private final String description;
-    private final OverridableResource resource;
+    static class Proxy implements Workshop {
+
+        Proxy(Workshop target) {
+            this.target = target;
+        }
+
+        @Override
+        public Path buildRoot() {
+            return target.buildRoot();
+        }
+
+        @Override
+        public Path resourceDir() {
+            return target.resourceDir();
+        }
+
+        private final Workshop target;
+    }
 }

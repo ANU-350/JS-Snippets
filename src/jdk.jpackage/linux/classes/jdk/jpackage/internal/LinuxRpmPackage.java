@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,22 @@
  */
 package jdk.jpackage.internal;
 
-class LauncherAsService {
+interface LinuxRpmPackage extends LinuxPackage {
 
-    LauncherAsService(Launcher launcher, OverridableResource resource) {
-        this.name = launcher.name();
-        this.description = launcher.description();
-        this.resource = resource;
-        resource.addSubstitutionDataEntry("SERVICE_DESCRIPTION", description);
+    String licenseType();
+
+    static class Impl extends LinuxPackage.Proxy<LinuxPackage> implements LinuxRpmPackage {
+
+        public Impl(LinuxPackage target, String licenseType) {
+            super(target);
+            this.licenseType = licenseType;
+        }
+
+        @Override
+        public String licenseType() {
+            return licenseType;
+        }
+
+        private final String licenseType;
     }
-
-    protected OverridableResource getResource() {
-        return resource;
-    }
-
-    protected String getName() {
-        return name;
-    }
-
-    protected String getDescription() {
-        return description;
-    }
-
-    private final String name;
-    private final String description;
-    private final OverridableResource resource;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,11 @@
  */
 package jdk.jpackage.internal;
 
-class LauncherAsService {
+import java.nio.file.Path;
+import java.util.List;
 
-    LauncherAsService(Launcher launcher, OverridableResource resource) {
-        this.name = launcher.name();
-        this.description = launcher.description();
-        this.resource = resource;
-        resource.addSubstitutionDataEntry("SERVICE_DESCRIPTION", description);
-    }
+interface LauncherModularStartupInfo extends LauncherStartupInfo {
+    String moduleName();
 
-    protected OverridableResource getResource() {
-        return resource;
-    }
-
-    protected String getName() {
-        return name;
-    }
-
-    protected String getDescription() {
-        return description;
-    }
-
-    private final String name;
-    private final String description;
-    private final OverridableResource resource;
+    List<Path> modulePath();
 }

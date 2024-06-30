@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,28 @@
  */
 package jdk.jpackage.internal;
 
-class LauncherAsService {
+import java.util.Map;
+import jdk.jpackage.internal.LinuxRpmPackage.Impl;
+import static jdk.jpackage.internal.Package.StandardPackageType.LinuxRpm;
+import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
 
-    LauncherAsService(Launcher launcher, OverridableResource resource) {
-        this.name = launcher.name();
-        this.description = launcher.description();
-        this.resource = resource;
-        resource.addSubstitutionDataEntry("SERVICE_DESCRIPTION", description);
+final class LinuxRpmPackageFromParams {
+
+    private static LinuxRpmPackage create(Map<String, ? super Object> params) throws ConfigException {
+        var pkg = LinuxPackageFromParams.create(params, LinuxRpm);
+
+        var licenseType = LICENSE_TYPE.fetchFrom(params);
+
+        return new Impl(pkg, licenseType);
     }
 
-    protected OverridableResource getResource() {
-        return resource;
-    }
+    static final StandardBundlerParam<LinuxRpmPackage> PACKAGE = createBundlerParam(
+            LinuxRpmPackageFromParams::create);
 
-    protected String getName() {
-        return name;
-    }
+    private static final BundlerParamInfo<String> LICENSE_TYPE = new StandardBundlerParam<>(
+            Arguments.CLIOptions.LINUX_RPM_LICENSE_TYPE.getId(),
+            String.class,
+            params -> I18N.getString("param.license-type.default"),
+            (s, p) -> s);
 
-    protected String getDescription() {
-        return description;
-    }
-
-    private final String name;
-    private final String description;
-    private final OverridableResource resource;
 }

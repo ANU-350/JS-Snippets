@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,27 @@
  */
 package jdk.jpackage.internal;
 
-class LauncherAsService {
+import java.util.Map;
+import static jdk.jpackage.internal.Package.StandardPackageType.LinuxDeb;
+import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
 
-    LauncherAsService(Launcher launcher, OverridableResource resource) {
-        this.name = launcher.name();
-        this.description = launcher.description();
-        this.resource = resource;
-        resource.addSubstitutionDataEntry("SERVICE_DESCRIPTION", description);
+final class LinuxDebPackageFromParams {
+
+    private static LinuxDebPackage create(Map<String, ? super Object> params) throws ConfigException {
+        var pkg = LinuxPackageFromParams.create(params, LinuxDeb);
+
+        var maintainerEmail = MAINTAINER_EMAIL.fetchFrom(params);
+
+        return new LinuxDebPackage.Impl(pkg, maintainerEmail);
     }
 
-    protected OverridableResource getResource() {
-        return resource;
-    }
+    static final StandardBundlerParam<LinuxDebPackage> PACKAGE = createBundlerParam(
+            LinuxDebPackageFromParams::create);
 
-    protected String getName() {
-        return name;
-    }
+    private static final BundlerParamInfo<String> MAINTAINER_EMAIL = new StandardBundlerParam<>(
+            Arguments.CLIOptions.LINUX_DEB_MAINTAINER.getId(),
+            String.class,
+            params -> "Unknown",
+            (s, p) -> s);
 
-    protected String getDescription() {
-        return description;
-    }
-
-    private final String name;
-    private final String description;
-    private final OverridableResource resource;
 }

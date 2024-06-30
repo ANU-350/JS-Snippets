@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,43 @@
  */
 package jdk.jpackage.internal;
 
-class LauncherAsService {
+import java.nio.file.Path;
+import java.util.Set;
 
-    LauncherAsService(Launcher launcher, OverridableResource resource) {
-        this.name = launcher.name();
-        this.description = launcher.description();
-        this.resource = resource;
-        resource.addSubstitutionDataEntry("SERVICE_DESCRIPTION", description);
+interface WinLauncher extends Launcher {
+
+    @Override
+    default Path executableName() {
+        return Path.of(name() + ".exe");
     }
 
-    protected OverridableResource getResource() {
-        return resource;
+    boolean isConsole();
+
+    enum WinShortcut {
+        WinShortcutDesktop,
+        WinShortcutStartMenu
     }
 
-    protected String getName() {
-        return name;
-    }
+    Set<WinShortcut> shortcuts();
 
-    protected String getDescription() {
-        return description;
-    }
+    static class Impl extends Launcher.Proxy<Launcher> implements WinLauncher {
+        Impl(Launcher launcher, boolean isConsole, Set<WinShortcut> shortcuts) {
+            super(launcher);
+            this.isConsole = isConsole;
+            this.shortcuts = shortcuts;
+        }
 
-    private final String name;
-    private final String description;
-    private final OverridableResource resource;
+        @Override
+        public boolean isConsole() {
+            return isConsole;
+        }
+
+        @Override
+        public Set<WinShortcut> shortcuts() {
+            return shortcuts;
+        }
+
+        private final boolean isConsole;
+        private final Set<WinShortcut> shortcuts;
+    }
 }

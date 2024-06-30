@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,28 @@
  */
 package jdk.jpackage.internal;
 
-class LauncherAsService {
+import java.util.Map;
+import jdk.jpackage.internal.Launcher.Impl;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
+import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
+import static jdk.jpackage.internal.StandardBundlerParam.LAUNCHER_AS_SERVICE;
+import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 
-    LauncherAsService(Launcher launcher, OverridableResource resource) {
-        this.name = launcher.name();
-        this.description = launcher.description();
-        this.resource = resource;
-        resource.addSubstitutionDataEntry("SERVICE_DESCRIPTION", description);
+final class LauncherFromParams {
+
+    static Launcher create(Map<String, ? super Object> params) {
+        var name = APP_NAME.fetchFrom(params);
+
+        LauncherStartupInfo startupInfo = null;
+        if (PREDEFINED_APP_IMAGE.fetchFrom(params) == null) {
+            startupInfo = LauncherStartupInfo.createFromParams(params);
+        }
+
+        var isService = LAUNCHER_AS_SERVICE.fetchFrom(params);
+        var description = DESCRIPTION.fetchFrom(params);
+        var icon = StandardBundlerParam.ICON.fetchFrom(params);
+        var fa = FileAssociation.fetchFrom(params);
+
+        return new Impl(name, startupInfo, fa, isService, description, icon);
     }
-
-    protected OverridableResource getResource() {
-        return resource;
-    }
-
-    protected String getName() {
-        return name;
-    }
-
-    protected String getDescription() {
-        return description;
-    }
-
-    private final String name;
-    private final String description;
-    private final OverridableResource resource;
 }
